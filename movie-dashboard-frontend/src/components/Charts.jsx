@@ -18,25 +18,40 @@ ChartJS.register(
   Legend
 );
 
-export default function Charts({ movies }) {
+export default function Charts({ movies = [] }) {
+  // ===== PIE CHART (GENRE) =====
   const genreCount = {};
-  movies.forEach((m) => {
-    genreCount[m.genre] = (genreCount[m.genre] || 0) + 1;
+
+  movies.forEach(m => {
+    if (m.genre) {
+      genreCount[m.genre] = (genreCount[m.genre] || 0) + 1;
+    }
   });
 
   const pieData = {
     labels: Object.keys(genreCount),
     datasets: [
       {
-        data: Object.values(genreCount)
+        label: "Genre Distribution",
+        data: Object.values(genreCount),
+        backgroundColor: [
+          "#4CAF50",
+          "#2196F3",
+          "#FFC107",
+          "#E91E63",
+          "#9C27B0"
+        ]
       }
     ]
   };
 
+  // ===== BAR CHART (PER DATE) =====
   const dateCount = {};
-  movies.forEach((m) => {
+
+  movies.forEach(m => {
     if (m.release_date) {
-      dateCount[m.release_date] = (dateCount[m.release_date] || 0) + 1;
+      const date = m.release_date.split("T")[0]; // normalize date
+      dateCount[date] = (dateCount[date] || 0) + 1;
     }
   });
 
@@ -45,7 +60,8 @@ export default function Charts({ movies }) {
     datasets: [
       {
         label: "Movies per Date",
-        data: Object.values(dateCount)
+        data: Object.values(dateCount),
+        backgroundColor: "#2196F3"
       }
     ]
   };
@@ -53,10 +69,38 @@ export default function Charts({ movies }) {
   return (
     <>
       <h3>Distribusi Genre</h3>
-      <Pie data={pieData} />
+      {Object.keys(genreCount).length > 0 ? (
+        <Pie data={pieData} />
+      ) : (
+        <p>Tidak ada data genre</p>
+      )}
 
-      <h3>Agregasi per Tanggal</h3>
-      <Bar data={barData} />
+      <h3 style={{ marginTop: "30px" }}>Agregasi per Tanggal</h3>
+      {Object.keys(dateCount).length > 0 ? (
+        <Bar
+          data={barData}
+          options={{
+            responsive: true,
+            plugins: {
+              legend: {
+                labels: {
+                  color: "#fff"
+                }
+              }
+            },
+            scales: {
+              x: {
+                ticks: { color: "#fff" }
+              },
+              y: {
+                ticks: { color: "#fff" }
+              }
+            }
+          }}
+        />
+      ) : (
+        <p>Tidak ada data tanggal</p>
+      )}
     </>
   );
 }

@@ -22,9 +22,32 @@ app.get("/", (req, res) => {
   res.send("Backend running");
 });
 
+// ========================
+// TMDB GENRE MAPPING
+// ========================
+let genreMapping = {};
+
+const fetchGenreMapping = async () => {
+  const response = await axios.get(
+    "https://api.themoviedb.org/3/genre/movie/list",
+    {
+      params: { api_key: process.env.TMDB_API_KEY }
+    }
+  );
+
+  genreMapping = {};
+  response.data.genres.forEach((genre) => {
+    genreMapping[genre.id] = genre.name;
+  });
+};
+
 // SYNC MOVIES FROM TMDB
 app.post("/sync-movies", async (req, res) => {
   try {
+     //ambil genre mapping
+	 await fetchGenreMapping();
+	 
+	 //ambil movie popular
     const response = await axios.get(
       "https://api.themoviedb.org/3/movie/popular",
       {
@@ -35,19 +58,22 @@ app.post("/sync-movies", async (req, res) => {
     const movies = response.data.results;
 
     for (const movie of movies) {
+	const genreNames = movie.genre_ids?.map(id => genreMapping[id] || "Unknown").join(", ");
+	
       await db.query(
         `INSERT INTO movies (tmdb_id, title, release_date, genre, popularity)
          VALUES (?, ?, ?, ?, ?)
          ON DUPLICATE KEY UPDATE
          title = VALUES(title),
          release_date = VALUES(release_date),
+		 genre = VALUES(genre),
          popularity = VALUES(popularity),
          updated_at = CURRENT_TIMESTAMP`,
         [
           movie.id,
           movie.title,
           movie.release_date,
-          movie.genre_ids?.[0] || "Unknown",
+          genreNames,
           movie.popularity
         ]
       );
@@ -119,15 +145,24 @@ app.post("/movies", async (req, res) => {
   try {
     const { title, release_date, genre, popularity } = req.body;
 
+	if (!title || !release_date || !genre || !popularity) {
+      return res.status(400).json({
+        success: false,
+        message: "Semua field wajib diisi"
+      });
+    }
+	
     await db.query(
       "INSERT INTO movies (title, release_date, genre, popularity) VALUES (?, ?, ?, ?)",
       [title, release_date, genre, popularity]
     );
 
-    res.json({ message: "Movie created" });
+    res.json({ success: true, message: "Movie created" });
   } catch (err) {
-    console.error(err);
-    res.status(500).json(err);
+    res.status(500).json({
+      success: false,
+      message: err.message
+    });
   }
 });
 // API UPDATE data
