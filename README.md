@@ -1,5 +1,4 @@
 # 🎬 Movie Dashboard Application  
- Test – Fullstack Developer
 
 ---
 
@@ -7,7 +6,7 @@
 ---
 
 ## 🎯 Project Objective
-Aplikasi ini dibangun untuk memenuhi seluruh requirement test, yaitu:
+Aplikasi ini dibangun untuk memenuhi seluruh requirement, yaitu:
 - Mengonsumsi **API publik**
 - Menyimpan data ke dalam **database**
 - Menyediakan fitur **manajemen data (CRUD)**
